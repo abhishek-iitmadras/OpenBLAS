@@ -46,13 +46,32 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 "        ptrue   p0."DTYPE"                              \n"
 #define OFFSET_INPUTS                                     \
 "        add     x12, %[X_], x9, lsl #"SHIFT"               \n" \
-"        add     x13, %[Y_], x9, lsl #"SHIFT"               \n"
+"        add     x13, %[Y_], x9, lsl #"SHIFT"               \n" \
+"        add     x14, x12, x9, lsl #"SHIFT"                 \n" \
+"        add     x15, x13, x9, lsl #"SHIFT"                 \n" \
+"        add     x16, x14, x9, lsl #"SHIFT"                 \n" \
+"        add     x17, x15, x9, lsl #"SHIFT"                 \n"
 #define TAIL_WHILE                                        \
 "        whilelo p1."DTYPE", x8, x0                         \n"
 #define UPDATE(pg, x,y,out)                               \
 "        ld1"WIDTH"    { z2."DTYPE" }, "pg"/z, ["x", x8, lsl #"SHIFT"]  \n" \
 "        ld1"WIDTH"    { z3."DTYPE" }, "pg"/z, ["y", x8, lsl #"SHIFT"]  \n" \
 "        fmla    "out"."DTYPE", "pg"/m, z2."DTYPE", z3."DTYPE"      \n"
+
+#define UPDATE_4X(pg) \
+"        ld1"WIDTH"    { z2."DTYPE" }, "pg"/z, [%[X_], x8, lsl #"SHIFT"]  \n" \
+"        ld1"WIDTH"    { z4."DTYPE" }, "pg"/z, [x12, x8, lsl #"SHIFT"]    \n" \
+"        ld1"WIDTH"    { z3."DTYPE" }, "pg"/z, [%[Y_], x8, lsl #"SHIFT"]  \n" \
+"        ld1"WIDTH"    { z5."DTYPE" }, "pg"/z, [x13, x8, lsl #"SHIFT"]    \n" \
+"        fmla    z1."DTYPE", "pg"/m, z2."DTYPE", z3."DTYPE"               \n" \
+"        fmla    z0."DTYPE", "pg"/m, z4."DTYPE", z5."DTYPE"               \n" \
+"        ld1"WIDTH"    { z2."DTYPE" }, "pg"/z, [x14, x8, lsl #"SHIFT"]    \n" \
+"        ld1"WIDTH"    { z4."DTYPE" }, "pg"/z, [x16, x8, lsl #"SHIFT"]    \n" \
+"        ld1"WIDTH"    { z3."DTYPE" }, "pg"/z, [x15, x8, lsl #"SHIFT"]    \n" \
+"        ld1"WIDTH"    { z5."DTYPE" }, "pg"/z, [x17, x8, lsl #"SHIFT"]    \n" \
+"        fmla    z8."DTYPE", "pg"/m, z2."DTYPE", z3."DTYPE"               \n" \
+"        fmla    z9."DTYPE", "pg"/m, z4."DTYPE", z5."DTYPE"               \n"
+
 #define SUM_VECTOR(v) \
 "        faddv   "DTYPE""v", p0, z"v"."DTYPE"                     \n"
 #define RET \
@@ -62,21 +81,26 @@ THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         COUNT                                             \
 "        mov     z1.d, #0                             \n" \
 "        mov     z0.d, #0                             \n" \
+"        mov     z8.d, #0                             \n" \
+"        mov     z9.d, #0                             \n" \
 "        mov     x8, #0                               \n" \
 "        movi    d1, #0x0                             \n" \
         SETUP_TRUE                                        \
-"        neg     x10, x9, lsl #1                      \n" \
+"        neg     x10, x9, lsl #2                      \n" \
 "        ands    x11, x10, x0                         \n" \
 "        b.eq    2f // skip_2x                        \n" \
         OFFSET_INPUTS                                     \
-"1: // vector_2x                                      \n" \
-        UPDATE("p0", "%[X_]", "%[Y_]", "z1") \
-        UPDATE("p0", "x12", "x13", "z0") \
+"1: // vector_4x                                      \n" \
+        UPDATE_4X("p0") \
 "        sub     x8, x8, x10                          \n" \
 "        cmp     x8, x11                              \n" \
-"        b.lo    1b // vector_2x                      \n" \
-        SUM_VECTOR("1") \
-"2: // skip_2x                                        \n" \
+"        b.lo    1b                                   \n" \
+        SUM_VECTOR("1")                                   \
+        SUM_VECTOR("8")                                   \
+        SUM_VECTOR("9")                                   \
+"        fadd    "DTYPE"1, "DTYPE"1, "DTYPE"8         \n" \
+"        fadd    "DTYPE"1, "DTYPE"1, "DTYPE"9         \n" \
+"2: // skip_4x                                        \n" \
 "        neg     x10, x9                              \n" \
 "        and     x10, x10, x0                         \n" \
 "        cmp     x8, x10                              \n" \
@@ -111,8 +135,8 @@ dot_kernel_sve(BLASLONG n, FLOAT* x, FLOAT* y)
       : "cc",
         "memory",
         "x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7",
-        "x8", "x9", "x10", "x11", "x12", "x13", "d1", 
-        "z0", "z1"
+        "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17",
+        "d1", "z0", "z1", "z2", "z3", "z4", "z5", "z8", "z9"
   );
 
   return ret;
