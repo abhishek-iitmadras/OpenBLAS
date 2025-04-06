@@ -227,3 +227,8 @@ ZHEMMUTCOPY_M    =  zhemm_utcopy_sve.c
 
 ZSYMMUCOPY_M    =  zsymm_ucopy_sve.c
 ZSYMMLCOPY_M    =  zsymm_lcopy_sve.c
+
+ifndef SBDOTKERNEL
+SBDOTKERNEL = sbdot.c
+endif
+

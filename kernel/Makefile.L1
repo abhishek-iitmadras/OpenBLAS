@@ -270,9 +270,10 @@ ifndef XDOTKERNEL
 XDOTKERNEL = zdot.S
 endif
 
+### NEED TO FIX THIS ###
 ifeq ($(BUILD_BFLOAT16),1)
 ifndef SBDOTKERNEL
-SBDOTKERNEL = ../x86_64/sbdot.c
+SBDOTKERNEL = ../arm64/sbdot.c
 endif
 
 ifndef TOBF16KERNEL
