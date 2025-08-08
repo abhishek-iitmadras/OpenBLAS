@@ -28,6 +28,9 @@
 
 include $(KERNELDIR)/KERNEL.ARMV8SVE
 
+
+SAXPBYKERNEL = axpby.c
+DAXPBYKERNEL = axpby.c
 SGEMVNKERNEL = gemv_n_sve_v1x3.c
 DGEMVNKERNEL = gemv_n_sve_v1x3.c
 SGEMVTKERNEL = gemv_t_sve_v1x3.c

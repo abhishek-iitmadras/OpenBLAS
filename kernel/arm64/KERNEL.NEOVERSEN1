@@ -50,6 +50,9 @@ DAXPYKERNEL  = daxpy_thunderx2t99.S
 CAXPYKERNEL  = zaxpy.S
 ZAXPYKERNEL  = zaxpy.S
 
+SAXPBYKERNEL = axpby.c
+DAXPBYKERNEL = axpby.c
+
 SROTKERNEL   = rot.S
 DROTKERNEL   = rot.S
 CROTKERNEL   = zrot.S
