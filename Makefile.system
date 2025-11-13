@@ -427,6 +427,7 @@ ifndef MACOSX_DEPLOYMENT_TARGET
 ifeq ($(ARCH), arm64)
 export MACOSX_DEPLOYMENT_TARGET=11.0
 export NO_SVE = 1
+export NO_SVE2 = 1
 export NO_SME = 1
 else
 export MACOSX_DEPLOYMENT_TARGET=10.8
@@ -718,6 +719,9 @@ DYNAMIC_CORE += NEOVERSEV1
 DYNAMIC_CORE += NEOVERSEN2
 DYNAMIC_CORE += ARMV8SVE
 DYNAMIC_CORE += A64FX
+endif
+ifneq ($(NO_SVE2), 1)
+DYNAMIC_CORE += ARMV9SVE
 endif
 ifneq ($(NO_SME), 1)
 DYNAMIC_CORE += ARMV9SME
@@ -1490,6 +1494,10 @@ endif
 
 ifeq ($(NO_SVE), 1)
 CCOMMON_OPT     += -DNO_SVE
+endif
+
+ifeq ($(NO_SVE2), 1)
+CCOMMON_OPT     += -DNO_SVE2
 endif
 
 ifeq ($(NO_SME), 1)

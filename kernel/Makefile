@@ -29,6 +29,16 @@ ifdef TARGET_CORE
 ifeq ($(TARGET_CORE), ARMV9SME)
  override CFLAGS += -DBUILD_KERNEL -DTABLE_NAME=gotoblas_$(TARGET_CORE) -DHAVE_SME -march=armv9-a+sve2+sme
 endif
+ifeq ($(TARGET_CORE), ARMV9SVE)
+ override CFLAGS += -DBUILD_KERNEL -DTABLE_NAME=gotoblas_$(TARGET_CORE)
+ifeq (1, $(filter 1,$(GCCVERSIONGTEQ12) $(CLANGVERSIONGTEQ13)))
+ override CFLAGS += -march=armv9-a+sve2+bf16
+else ifeq (1, $(filter 1,$(GCCVERSIONGTEQ10) $(CLANGVERSIONGTEQ11)))
+ override CFLAGS += -march=armv8.5-a+sve2+bf16
+else
+ override CFLAGS += -march=armv8.2-a+sve
+endif
+endif
 ifeq ($(TARGET_CORE), SAPPHIRERAPIDS)
  override CFLAGS += -DBUILD_KERNEL -DTABLE_NAME=gotoblas_$(TARGET_CORE)
  ifeq (1, $(filter 1,$(GCCVERSIONGTEQ11) $(CLANGVERSIONGTEQ12)))
@@ -75,7 +85,7 @@ else ifeq ($(TARGET_CORE), ZEN)
  override CFLAGS += -DBUILD_KERNEL -DTABLE_NAME=gotoblas_$(TARGET_CORE) $(AVX2OPT)
 else ifeq ($(TARGET_CORE), LOONGSON3R4)
  override CFLAGS += -DBUILD_KERNEL -DTABLE_NAME=gotoblas_$(TARGET_CORE) $(MSA_FLAGS)
-else ifneq ($(filter NEOVERSEN2 NEOVERSEV1, $(TARGET_CORE)),)
+else ifneq ($(filter NEOVERSEN2 NEOVERSEV1 ARMV9SVE, $(TARGET_CORE)),)
  ifeq ($(C_COMPILER), PGI)
   override CFLAGS += -DBUILD_KERNEL -DTABLE_NAME=gotoblas_$(TARGET_CORE) -Msve_intrinsics
  else

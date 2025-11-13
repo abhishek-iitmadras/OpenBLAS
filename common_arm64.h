@@ -175,7 +175,7 @@ REALNAME:
 #define HUGE_PAGESIZE   ( 4 << 20)
 
 #ifndef BUFFERSIZE
-#if defined(NEOVERSEN1) || defined(NEOVERSEN2) || defined(NEOVERSEV1) || defined(A64FX) || defined(ARMV8SVE) || defined(ARMV9SME)
+#if defined(NEOVERSEN1) || defined(NEOVERSEN2) || defined(NEOVERSEV1) || defined(A64FX) || defined(ARMV8SVE) || defined(ARMV9SME) || defined(ARMV9SVE)
 #define BUFFER_SIZE     (32 << 22)
 #else
 #define BUFFER_SIZE     (32 << 20)

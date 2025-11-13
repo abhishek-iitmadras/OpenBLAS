@@ -43,6 +43,12 @@ size_t length64=sizeof(value64);
 #ifndef HWCAP_SVE
 #define HWCAP_SVE (1 << 22)
 #endif
+#ifndef AT_HWCAP2
+#define AT_HWCAP2 26
+#endif
+#ifndef HWCAP2_SVE2
+#define HWCAP2_SVE2 (1 << 1)
+#endif
 #if (defined OS_WINDOWS)
 #include <winreg.h>
 #endif
@@ -513,12 +519,24 @@ void get_cpuconfig(void)
 	      // Minimum parameters for ARMv8 (based on A53)
 	    	printf("#define L1_DATA_SIZE 32768\n");
 	    	printf("#define L1_DATA_LINESIZE 64\n");
- 	   	printf("#define L2_SIZE 262144\n");
+ 	   		printf("#define L2_SIZE 262144\n");
 	    	printf("#define L2_LINESIZE 64\n");
 	    	printf("#define DTB_DEFAULT_ENTRIES 64\n");
- 	   	printf("#define DTB_SIZE 4096\n");
- 	   	printf("#define L2_ASSOCIATIVE 4\n");
-			break;
+ 	   		printf("#define DTB_SIZE 4096\n");
+ 	   		printf("#define L2_ASSOCIATIVE 4\n");
+#if (defined OS_LINUX || defined OS_ANDROID)
+      unsigned long hwcap  = getauxval(AT_HWCAP);
+      unsigned long hwcap2 = getauxval(AT_HWCAP2);
+
+      if (hwcap2 & HWCAP2_SVE2) {
+        printf("#define ARMV9\n");
+        printf("#define HAVE_SVE 1\n");
+      } else if (hwcap & HWCAP_SVE) {
+        printf("#define ARMV8SVE\n");
+        printf("#define HAVE_SVE 1\n");
+      }
+#endif
+      break;
 
 	    case CPU_CORTEXA57:
 	    case CPU_CORTEXA72:

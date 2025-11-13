@@ -128,6 +128,15 @@ extern gotoblas_t gotoblas_ARMV9SME;
 #else
 #define gotoblas_ARMV9SME gotoblas_ARMV8
 #endif
+#ifdef DYN_ARMV9SVE
+extern gotoblas_t gotoblas_ARMV9SVE;
+#else
+#ifdef DYN_ARMV8SVE
+#define gotoblas_ARMV9SVE gotoblas_ARMV8SVE
+#else
+#define gotoblas_ARMV9SVE gotoblas_ARMV8
+#endif
+#endif
 #ifdef DYN_CORTEXA55
 extern gotoblas_t  gotoblas_CORTEXA55;
 #else
@@ -155,6 +164,11 @@ extern gotoblas_t  gotoblas_NEOVERSEV1;
 extern gotoblas_t  gotoblas_NEOVERSEN2;
 extern gotoblas_t  gotoblas_ARMV8SVE;
 extern gotoblas_t  gotoblas_A64FX;
+#ifndef NO_SVE2
+extern gotoblas_t  gotoblas_ARMV9SVE;
+#else
+#define gotoblas_ARMV9SVE gotoblas_ARMV8SVE
+#endif
 #ifndef NO_SME
 extern gotoblas_t  gotoblas_ARMV9SME;
 #else
@@ -165,6 +179,7 @@ extern gotoblas_t  gotoblas_ARMV9SME;
 #define gotoblas_NEOVERSEN2 gotoblas_ARMV8
 #define gotoblas_ARMV8SVE   gotoblas_ARMV8
 #define gotoblas_A64FX      gotoblas_ARMV8
+#define gotoblas_ARMV9SVE   gotoblas_ARMV8
 #define gotoblas_ARMV9SME   gotoblas_ARMV8
 #endif
 
@@ -176,7 +191,7 @@ extern void openblas_warning(int verbose, const char * msg);
 #define FALLBACK_VERBOSE 1
 #define NEOVERSEN1_FALLBACK "OpenBLAS : Your OS does not support SVE instructions. OpenBLAS is using Neoverse N1 kernels as a fallback, which may give poorer performance.\n"
 
-#define NUM_CORETYPES   19
+#define NUM_CORETYPES   20
 
 /*
  * In case asm/hwcap.h is outdated on the build system, make sure
@@ -187,6 +202,12 @@ extern void openblas_warning(int verbose, const char * msg);
 #endif
 #ifndef HWCAP_SVE
 #define HWCAP_SVE (1 << 22)
+#endif
+#ifndef AT_HWCAP2
+#define AT_HWCAP2 26
+#endif
+#ifndef HWCAP2_SVE2
+#define HWCAP2_SVE2 (1 << 1)
 #endif
 #ifndef HWCAP2_SME
 #define HWCAP2_SME 1<<23
@@ -215,6 +236,7 @@ static char *corename[] = {
   "cortexa55",
   "armv8sve",
   "a64fx",
+  "armv9sve",
   "armv9sme",
   "unknown"
 };
@@ -238,7 +260,8 @@ char *gotoblas_corename(void) {
   if (gotoblas == &gotoblas_CORTEXA55)    return corename[15];
   if (gotoblas == &gotoblas_ARMV8SVE)     return corename[16];
   if (gotoblas == &gotoblas_A64FX)        return corename[17];
-  if (gotoblas == &gotoblas_ARMV9SME)     return corename[18];
+  if (gotoblas == &gotoblas_ARMV9SVE)     return corename[18];
+  if (gotoblas == &gotoblas_ARMV9SME)     return corename[19];
   return corename[NUM_CORETYPES];
 }
 
@@ -276,7 +299,8 @@ static gotoblas_t *force_coretype(char *coretype) {
     case 15: return (&gotoblas_CORTEXA55);
     case 16: return (&gotoblas_ARMV8SVE);
     case 17: return (&gotoblas_A64FX);
-    case 18: return (&gotoblas_ARMV9SME);
+    case 18: return (&gotoblas_ARMV9SVE);
+    case 19: return (&gotoblas_ARMV9SME);
   }
   snprintf(message, 128, "Core not found: %s\n", coretype);
   openblas_warning(1, message);
@@ -477,15 +501,28 @@ static gotoblas_t *get_coretype(void) {
   }
 #endif
 
-#ifndef NO_SVE
-  if ((getauxval(AT_HWCAP) & HWCAP_SVE)) {
-    return &gotoblas_ARMV8SVE;
-  }
+#if !defined(NO_SVE)
+{
+  unsigned long hwcap = 0, hwcap2 = 0;
+  #if (defined OS_LINUX || defined OS_ANDROID)
+    hwcap  = getauxval(AT_HWCAP);
+    #ifndef NO_SVE2
+      hwcap2 = getauxval(AT_HWCAP2);
+      if (hwcap2 & HWCAP2_SVE2) {
+        return &gotoblas_ARMV9SVE;
+      }
+    #endif
+    if (hwcap & HWCAP_SVE) {
+      return &gotoblas_ARMV8SVE;
+    }
+  #endif
+}
 #endif
 
   return NULL;
 #endif
 }
+
 
 void gotoblas_dynamic_init(void) {
 
